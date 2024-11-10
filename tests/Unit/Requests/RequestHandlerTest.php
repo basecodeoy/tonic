@@ -1,0 +1,64 @@
+<?php declare(strict_types=1);
+
+/**
+ * Copyright (C) BaseCode Oy - All Rights Reserved
+ *
+ * Unauthorized copying, distribution, or use of this file in any manner
+ * is strictly prohibited. This material is proprietary and confidential.
+ */
+
+use BaseCodeOy\Tonic\Contracts\ServerInterface;
+use BaseCodeOy\Tonic\Requests\RequestHandler;
+use Illuminate\Support\Facades\App;
+use Illuminate\Support\Facades\Route;
+use Tests\Support\Fakes\Server;
+
+beforeEach(function (): void {
+    Route::rpc(Server::class);
+
+    App::bind(ServerInterface::class, Server::class);
+});
+
+it('can call a method from an array', function (): void {
+    $result = RequestHandler::createFromArray([
+        'jsonrpc' => '2.0',
+        'id' => 1,
+        'method' => 'app.subtract_with_binding',
+        'params' => [
+            'data' => ['subtrahend' => 23, 'minuend' => 42],
+        ],
+    ]);
+
+    expect($result->toArray())->toBe([
+        'data' => [
+            'jsonrpc' => '2.0',
+            'id' => 1,
+            'result' => 19,
+        ],
+        'statusCode' => 200,
+        'headers' => [],
+    ]);
+});
+
+it('can call a method from a string', function (): void {
+    $result = RequestHandler::createFromString(
+        \json_encode([
+            'jsonrpc' => '2.0',
+            'id' => 1,
+            'method' => 'app.subtract_with_binding',
+            'params' => [
+                'data' => ['subtrahend' => 23, 'minuend' => 42],
+            ],
+        ]),
+    );
+
+    expect($result->toArray())->toBe([
+        'data' => [
+            'jsonrpc' => '2.0',
+            'id' => 1,
+            'result' => 19,
+        ],
+        'statusCode' => 200,
+        'headers' => [],
+    ]);
+});
